@@ -8,25 +8,47 @@ const useField = (type) => {
     setValue(event.target.value)
   }
 
+  const reset = () => {
+    setValue('')
+  }
+
   return {
     type,
     value,
-    onChange
+    onChange,
+    reset
   }
 }
 
 const useResource = (baseUrl) => {
   const [resources, setResources] = useState([])
 
-  // ...
+  const getAll = async () => {
+    const response = await axios.get(baseUrl)
+    console.log(response.data)
+    return response.data
+  }
 
-  const create = (resource) => {
-    // ...
+  const create = async (resource) => {
+    const response = await axios.post(baseUrl, resource)
+    const newResource = response.data
+    setResources([...resources, newResource])
   }
 
   const service = {
     create
   }
+
+  useEffect(() => {
+    async function fetchData() {
+      try {
+        const response = await axios.get(baseUrl)
+        setResources(response.data)
+      } catch (err) {} /* seems to always print the 404 to console anyways :/ */
+    }
+    fetchData()
+  }, [baseUrl])
+
 
   return [
     resources, service
@@ -34,9 +56,9 @@ const useResource = (baseUrl) => {
 }
 
 const App = () => {
-  const content = useField('text')
-  const name = useField('text')
-  const number = useField('text')
+  const {reset: resetContent, ...content} = useField('text')
+  const {reset: resetName, ...name} = useField('text')
+  const {reset: resetNumber, ...number} = useField('text')
 
   const [notes, noteService] = useResource('http://localhost:3005/notes')
   const [persons, personService] = useResource('http://localhost:3005/persons')
@@ -44,11 +66,16 @@ const App = () => {
   const handleNoteSubmit = (event) => {
     event.preventDefault()
     noteService.create({ content: content.value })
+    resetContent()
   }
+
+  //sit pitäis kai formin submit hoitaa? toimii jo mut ei tyhjennä tai reloadaa 
  
   const handlePersonSubmit = (event) => {
     event.preventDefault()
     personService.create({ name: name.value, number: number.value})
+    resetName()
+    resetNumber()
   }
 
   return (
